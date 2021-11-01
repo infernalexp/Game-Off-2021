@@ -8,10 +8,11 @@ import org.infernalstudios.gameoff.GameOff;
 public class HtmlLauncher extends GwtApplication {
     @Override
     public GwtApplicationConfiguration getConfig () {
-        // Resizable application, uses available space in browser
-        return new GwtApplicationConfiguration(true);
-        // Fixed size application:
-        //return new GwtApplicationConfiguration(480, 320);
+        GwtApplicationConfiguration config = new GwtApplicationConfiguration(640, 640);
+
+        config.antialiasing = false;
+
+        return config;
     }
 
     @Override
