@@ -1,0 +1,112 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'core/**'
+      - 'desktop/**'
+      - 'html/**'
+      - '*.gradle'
+      - '*.properties'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    name: Build and upload artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - name: Setup Java 16
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '16'
+
+      - name: Build Desktop
+        run: ./gradlew desktop:dist
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Desktop Artifacts
+          path: desktop/build/dist
+
+      - name: Build Web
+        run: ./gradlew html:dist
+
+      - name: Upload Web Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Web Artifacts
+          path: html/build/dist
+  
+  deploy:
+    name: Release web version on GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - name: Setup Java 16
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '16'
+
+      - name: Build Web
+        run: ./gradlew html:dist
+
+      - name: Deploy to GitHub pages
+        env:
+          DIRECTORY: './html/build/dist'
+          BRANCH: 'deploy'
+        run: |
+          tmpdir=`mktemp -d`
+          mv -vf "$DIRECTORY"/* $tmpdir
+          cd "$tmpdir"
+
+          git init
+          echo "This is an automated branch. Please do not commit to or change any files in it." >> README
+          git add . -v
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --verbose -m "Deployment: $GITHUB_SHA
+          This is an automated commit, it was made by a GitHub workflow.
+          Action: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          "
+          git branch -m deploy
+
+          git remote add origin "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
+          git push origin deploy --force --verbose
+          
+          cd ~
+          rm -rf "$tmpdir"
