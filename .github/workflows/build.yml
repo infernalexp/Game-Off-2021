@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Desktop Artifacts
-          path: desktop/build/dist
+          path: desktop/build/libs
 
       - name: Build Web
         run: ./gradlew html:dist

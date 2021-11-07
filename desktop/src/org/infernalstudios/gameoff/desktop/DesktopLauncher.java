@@ -5,10 +5,14 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import org.infernalstudios.gameoff.GameOff;
 
 public class DesktopLauncher {
-    public static void main (String[] arg) {
+    public static void main(String[] arg) {
+        int width = 640;
+        int height = 640;
+
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setWindowedMode(640, 640);
+        config.setWindowedMode(width, height);
         config.setResizable(false);
-        new Lwjgl3Application(new GameOff(), config);
+        GameOff game = new GameOff(width, height);
+        new Lwjgl3Application(game, config);
     }
 }
