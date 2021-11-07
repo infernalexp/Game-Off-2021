@@ -17,6 +17,6 @@ public class HtmlLauncher extends GwtApplication {
 
     @Override
     public ApplicationListener createApplicationListener () {
-        return new GameOff();
+        return new GameOff(640, 640);
     }
 }
